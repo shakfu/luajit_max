@@ -1,306 +1,249 @@
 /**
-	@file
-	luajit~ - a simple wavetable oscillator using buffer~
-
-	@ingroup	examples
+    @file
+    luajit~: luajit for Max
+    original by: jeremy bernstein, jeremy@bootsquad.com
+    @ingroup examples
 */
 
-#include "ext.h"
-#include "z_dsp.h"
-#include "math.h"
-#include "ext_buffer.h"
-#include "ext_atomic.h"
-#include "ext_obex.h"
+#include "ext.h"            // standard Max include, always required (except in Jitter)
+#include "ext_obex.h"       // required for "new" style objects
+#include "z_dsp.h"          // required for MSP objects
 
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
 
-
-typedef struct _luajit {
-	t_pxobject w_obj;
-	t_buffer_ref *w_buf;
-	t_symbol *w_name;
-	long w_begin;
-	long w_len;
-	float w_start;
-	float w_end;
-	short w_connected[2];
-	t_bool w_buffer_modified;
-} t_luajit;
+#include <libgen.h>
+#include <unistd.h>
 
 
-void *luajit_new(t_symbol *s,  long argc, t_atom *argv);
-void luajit_free(t_luajit *x);
-t_max_err luajit_notify(t_luajit *x, t_symbol *s, t_symbol *msg, void *sender, void *data);
-void luajit_assist(t_luajit *x, void *b, long m, long a, char *s);
-void luajit_limits(t_luajit *x);
-void luajit_set(t_luajit *x, t_symbol *s, long ac, t_atom *av);
-void luajit_float(t_luajit *x, double f);
-void luajit_int(t_luajit *x, long n);
-void luajit_dblclick(t_luajit *x);
-void luajit_perform64(t_luajit *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
-void luajit_dsp64(t_luajit *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+// struct to represent the object's state
+typedef struct _mlj {
+    t_pxobject ob;         // the object itself (t_pxobject in MSP instead of t_object)
+    double     offset;     // the value of a property of our object
+    lua_State *L;          // lua state
+    t_symbol*  filename;   // filename of lua file in Max search path
+} t_mlj;
 
 
-static t_symbol *ps_buffer_modified;
-static t_class *s_luajit_class;
+// method prototypes
+void *mlj_new(t_symbol *s, long argc, t_atom *argv);
+void *mlj_init_lua(t_mlj *x);
+void mlj_free(t_mlj *x);
+void mlj_assist(t_mlj *x, void *b, long m, long a, char *s);
+void mlj_bang(t_mlj *x);
+void mlj_float(t_mlj *x, double f);
+void mlj_dsp64(t_mlj *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void mlj_perform64(t_mlj *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
+t_string* get_path_from_package(t_class* c, char* subpath);
+
+// global class pointer variable
+static t_class *mlj_class = NULL;
+
+
+//-----------------------------------------------------------------------------------------------
+
+
+int run_lua_string(t_mlj *x, const char* code)
+{
+    int err;
+    err = luaL_dostring(x->L, code);
+    if (err) {
+        error("%s", lua_tostring(x->L, -1));
+        lua_pop(x->L, 1);  /* pop error message from the stack */
+    }
+    return 0; 
+}
+
+int run_lua_file(t_mlj *x, const char* path)
+{
+    int err;
+    err = luaL_dofile(x->L, path);
+    if (err) {
+        error("%s", lua_tostring(x->L, -1));
+        lua_pop(x->L, 1);  /* pop error message from the stack */
+    }
+    return 0; 
+}
+
+
+int luaAdd(t_mlj *x, int a, int b) {
+   // Push the add function on the top of the lua stack
+   lua_getglobal(x->L, "add");
+   // Push the first argument on the top of the lua stack
+   lua_pushnumber(x->L, a);
+   // Push the second argument on the top of the lua stack
+   lua_pushnumber(x->L, b);
+   // Call the function with 2 arguments, returning 1 result
+   lua_call(x->L, 2, 1);
+   // Get the result
+   int sum = (int)lua_tointeger(x->L, -1);
+   lua_pop(x->L, 1);
+   return sum;
+}
+
+t_string* get_path_from_external(t_class* c, char* subpath)
+{
+    char external_path[MAX_PATH_CHARS];
+    char external_name[MAX_PATH_CHARS];
+    char conform_path[MAX_PATH_CHARS];
+    short path_id = class_getpath(c);
+    t_string* result;
+
+#ifdef __APPLE__
+    const char* ext_filename = "%s.mxo";
+#else
+    const char* ext_filename = "%s.mxe64";
+#endif
+    snprintf_zero(external_name, MAX_PATH_CHARS, ext_filename, c->c_sym->s_name);
+    path_toabsolutesystempath(path_id, external_name, external_path);
+    path_nameconform(external_path, conform_path, PATH_STYLE_MAX, PATH_TYPE_BOOT);
+    result = string_new(external_path);
+    if (subpath != NULL) {
+        string_append(result, subpath);
+    }
+    return result;
+}
+
+
+t_string* get_path_from_package(t_class* c, char* subpath)
+{
+    t_string* result;
+    t_string* external_path = get_path_from_external(c, NULL);
+
+    const char* ext_path_c = string_getptr(external_path);
+
+    result = string_new(dirname(dirname((char*)ext_path_c)));
+
+    if (subpath != NULL) {
+        string_append(result, subpath);
+    }
+
+    return result;
+}
+
+//-----------------------------------------------------------------------------------------------
 
 void ext_main(void *r)
 {
-	t_class *c = class_new("luajit~", (method)luajit_new, (method)luajit_free, sizeof(t_luajit), NULL, A_GIMME, 0);
+    // object initialization, note the use of dsp_free for the freemethod, which is required
+    // unless you need to free allocated memory, in which case you should call dsp_free from
+    // your custom free function.
 
-	class_addmethod(c, (method)luajit_dsp64,		"dsp64",	A_CANT, 0);
-	class_addmethod(c, (method)luajit_float,		"float",	A_FLOAT, 0);
-	class_addmethod(c, (method)luajit_int,			"int",		A_LONG, 0);
-	class_addmethod(c, (method)luajit_set,			"set",		A_GIMME, 0);
-	class_addmethod(c, (method)luajit_assist,		"assist",	A_CANT, 0);
-	class_addmethod(c, (method)luajit_dblclick,		"dblclick",	A_CANT, 0);
-	class_addmethod(c, (method)luajit_notify,		"notify",	A_CANT, 0);
+    t_class *c = class_new("luajit~", (method)mlj_new, (method)mlj_free, (long)sizeof(t_mlj), 0L, A_GIMME, 0);
 
-	class_dspinit(c);
-	class_register(CLASS_BOX, c);
-	s_luajit_class = c;
+    class_addmethod(c, (method)mlj_float,    "float",    A_FLOAT, 0);
+    class_addmethod(c, (method)mlj_bang,     "bang",              0);
+    class_addmethod(c, (method)mlj_dsp64,    "dsp64",    A_CANT,  0);
+    class_addmethod(c, (method)mlj_assist,   "assist",   A_CANT,  0);
 
-	ps_buffer_modified = gensym("buffer_modified");
+    class_dspinit(c);
+    class_register(CLASS_BOX, c);
+    mlj_class = c;
 }
 
 
-void *luajit_new(t_symbol *s,  long argc, t_atom *argv)
+void *mlj_init_lua(t_mlj *x)
 {
-	t_luajit *x = (t_luajit *)object_alloc(s_luajit_class);
-	t_symbol *buf=0;
-	float start=0., end=0.;
-	double msr = sys_getsr() * 0.001;
+    x->L = luaL_newstate();
+    luaL_openlibs(x->L);  /* opens the standard libraries */
+    if (x->filename != gensym("")) {
+        char norm_path[MAX_PATH_CHARS];
+        path_nameconform(x->filename->s_name, norm_path, 
+            PATH_STYLE_MAX, PATH_TYPE_BOOT);
+        if (access(norm_path, F_OK) == 0) { // file exists in path
+            run_lua_file(x, norm_path);
+        } else { // try in the example folder
+            t_string* path = get_path_from_package(mlj_class, "/examples/");
+            string_append(path, x->filename->s_name);
+            const char* lua_file = string_getptr(path);
+            run_lua_file(x, lua_file);
+        }
+    }
+}
 
-	dsp_setup((t_pxobject *)x,3);
-	buf = atom_getsymarg(0,argc,argv);
-	start = atom_getfloatarg(1,argc,argv);
-	end = atom_getfloatarg(2,argc,argv);
+void *mlj_new(t_symbol *s, long argc, t_atom *argv)
+{
+    t_mlj *x = (t_mlj *)object_alloc(mlj_class);
 
-	x->w_name = buf;
-	x->w_start = start;
-	x->w_end = end;
-	x->w_begin = start * msr;
-	x->w_len = (end - start) * msr;
-	outlet_new((t_object *)x, "signal");		// audio outlet
+    if (x) {
+        dsp_setup((t_pxobject *)x, 1);  // MSP inlets: arg is # of inlets and is REQUIRED!
+        // use 0 if you don't need inlets
 
-	// create a new buffer reference, initially referencing a buffer with the provided name
-	x->w_buf = buffer_ref_new((t_object *)x, x->w_name);
+        outlet_new(x, "signal");        // signal outlet (note "signal" rather than NULL)
+        x->offset = 0.0;
+        x->filename = atom_getsymarg(0, argc, argv); // 1st arg of object
+        post("filename: %s", x->filename->s_name);
 
-	return (x);
+        // init lua
+        mlj_init_lua(x);
+    }
+    return (x);
 }
 
 
-void luajit_free(t_luajit *x)
-{
-	dsp_free((t_pxobject *)x);
 
-	// must free our buffer reference when we will no longer use it
-	object_free(x->w_buf);
+
+// NOT CALLED!, we use dsp_free for a generic free function
+void mlj_free(t_mlj *x)
+{
+    lua_close(x->L);
+    dsp_free((t_pxobject *)x);
 }
 
 
-// A notify method is required for our buffer reference
-// This handles notifications when the buffer appears, disappears, or is modified.
-t_max_err luajit_notify(t_luajit *x, t_symbol *s, t_symbol *msg, void *sender, void *data)
+void mlj_assist(t_mlj *x, void *b, long m, long a, char *s)
 {
-	if (msg == ps_buffer_modified)
-		x->w_buffer_modified = true;
-	return buffer_ref_notify(x->w_buf, s, msg, sender, data);
+    if (m == ASSIST_INLET) { //inlet
+        sprintf(s, "I am inlet %ld", a);
+    }
+    else {  // outlet
+        sprintf(s, "I am outlet %ld", a);
+    }
+}
+
+void mlj_bang(t_mlj *x)
+{
+    post("lua add(10,2): %d", luaAdd(x, 10,2));
 }
 
 
-void luajit_assist(t_luajit *x, void *b, long m, long a, char *s)
+void mlj_float(t_mlj *x, double f)
 {
-	if (m == ASSIST_INLET) {	// inlets
-		switch (a) {
-		case 0:	snprintf_zero(s, 256, "(signal) Table Position (from 0 to 1)");	break;
-		case 1:	snprintf_zero(s, 256, "(signal/float) Starting Table Location in ms");	break;
-		case 2:	snprintf_zero(s, 256, "(signal/float) Ending Table Location in ms");	break;
-		}
-	}
-	else {	// outlet
-		snprintf_zero(s, 256, "(signal) Output %ld", a+1);
-	}
+    x->offset = f;
+    post("offset: %f", x->offset);
 }
 
 
-void luajit_limits(t_luajit *x)
+
+// registers a function for the signal chain in Max
+void mlj_dsp64(t_mlj *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	t_buffer_obj *b = buffer_ref_getobject(x->w_buf); // get the actual buffer object from our reference
+    post("my sample rate is: %f", samplerate);
 
-	if (b) {
-		t_atom_long	channelcount = buffer_getchannelcount(b);		// number of floats in a frame
-		t_atom_long	framecount   = buffer_getframecount(b);			// number of floats long the buffer is for a single channel
-		double		msr			 = buffer_getmillisamplerate(b);	// sample rate of the buffer in samples per millisecond
+    // instead of calling dsp_add(), we send the "dsp_add64" message to the object representing the dsp chain
+    // the arguments passed are:
+    // 1: the dsp64 object passed-in by the calling function
+    // 2: the symbol of the "dsp_add64" message we are sending
+    // 3: a pointer to your object
+    // 4: a pointer to your 64-bit perform method
+    // 5: flags to alter how the signal chain handles your object -- just pass 0
+    // 6: a generic pointer that you can use to pass any additional data to your perform method
 
-		x->w_begin = (long)(x->w_start * msr) * channelcount;//buffer sr-jkc
-		if (!x->w_end)	{// use entire table, eek!
-			x->w_len = framecount;
-		} else {
-			x->w_len = (x->w_end - x->w_start) * msr; //buffer sr-jkc
-		}
-		// now restrict these values
-		if (x->w_begin < 0)
-			x->w_begin = 0;
-		else if (x->w_begin >= framecount * channelcount)
-			x->w_begin = (framecount - 1) * channelcount;
-		if (x->w_begin + (x->w_len * channelcount) >= framecount * channelcount) {
-			x->w_len = framecount - (x->w_begin / channelcount);
-		}
-	}
+    object_method(dsp64, gensym("dsp_add64"), x, mlj_perform64, 0, NULL);
 }
 
 
-void luajit_doset(t_luajit *x, t_symbol *s, long ac, t_atom *av)
+// this is the 64-bit perform method audio vectors
+void mlj_perform64(t_mlj *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-	t_symbol *name;
-	double start, end;
+    t_double *inL = ins[0];     // we get audio for each inlet of the object from the **ins argument
+    t_double *outL = outs[0];   // we get audio for each outlet of the object from the **outs argument
+    int n = sampleframes;
 
-	name = (ac) ? atom_getsym(av) : gensym("");
-	start = (ac>1) ? atom_getfloat(av+1) : 0.;
-	end = (ac>2) ? atom_getfloat(av+2) : 0.;
-
-	if (start < 0)
-		start = 0;
-	if (end < 0)
-		end = 0;
-	x->w_start = start;
-	x->w_end = end;
-
-	buffer_ref_set(x->w_buf, name);	// change the buffer used by our buffer reference
-	luajit_limits(x);
-}
-
-
-// calls set the buffer ref should happen on the main thread only
-void luajit_set(t_luajit *x, t_symbol *s, long ac, t_atom *av)
-{
-	defer(x, (method)luajit_doset, s, ac, av);
-}
-
-
-void luajit_float(t_luajit *x, double f)
-{
-	long in = proxy_getinlet((t_object *)x);
-
-	if (in == 1) {		// set min
-		if (f < 0)
-			f = 0;
-		if (f > x->w_end)
-			x->w_end = f;
-		x->w_start = f;
-		luajit_limits(x);
-	}
-	else if (in == 2) {	// set max
-		if (f < 0)
-			f = 0;
-		if (f < x->w_start)
-			x->w_start = f;
-		x->w_end = f;
-		luajit_limits(x);
-	}
-}
-
-
-void luajit_int(t_luajit *x, long n)
-{
-	luajit_float(x,(double)n);
-}
-
-
-void luajit_dblclick(t_luajit *x)
-{
-	buffer_view(buffer_ref_getobject(x->w_buf));
-}
-
-
-void luajit_perform64(t_luajit *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
-{
-	t_double		*in = ins[0];
-	t_double		*out = outs[0];
-	t_double		min = x->w_connected[0]? *ins[1] : x->w_start;
-	t_double		max = x->w_connected[1]? *ins[2] : x->w_end;
-	int				n = sampleframes;
-	float			*b;
-	long			len, dex;
-	double			v;
-	t_buffer_obj	*buffer = buffer_ref_getobject(x->w_buf);
-	t_atom_long		channelcount;
-
-	b = buffer_locksamples(buffer);
-	if (!b)
-		goto zero;
-
-	channelcount = buffer_getchannelcount(buffer);
-
-	if (x->w_buffer_modified) {
-		x->w_buffer_modified = false;
-		luajit_limits(x);
-		if (!x->w_connected[0])
-			min = x->w_start;
-		if (!x->w_connected[1])
-			max = x->w_end;
-	}
-
-	if (min != x->w_start || max != x->w_end) {
-		if (min < 0.)
-			min = 0.;
-		if (max < 0.)
-			max = 0.;
-		if (min > max)
-			x->w_end = x->w_start = min;
-		else {
-			x->w_start = min;
-			x->w_end = max;
-		}
-		luajit_limits(x);
-	}
-
-	b += x->w_begin;
-	len = x->w_len;
-
-	if (channelcount == 1) {
-		while (n--) {
-			v = *in++;
-			if (v < 0)
-				v = 0;
-			if (v > 1)
-				v = 1;
-			dex = v * (double)len;
-			if (dex>len-1)
-				dex = len-1;
-			*out++ = b[dex];
-		}
-	}
-	else if (channelcount > 1) {
-		while (n--) {
-			v = *in++;
-			if (v < 0)
-				v = 0;
-			if (v > 1)
-				v = 1;
-			dex = (long)(v * (double)len) * channelcount;
-			if (dex>(len-1)*channelcount)
-				dex = (len-1)*channelcount;
-			*out++ = b[dex];
-		}
-	}
-
-	buffer_unlocksamples(buffer);
-	return;
-zero:
-	while (n--)
-		*out++ = 0.;
-}
-
-
-void luajit_dsp64(t_luajit *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
-{
-	x->w_connected[0] = count[1];
-	x->w_connected[1] = count[2];
-	object_method(dsp64, gensym("dsp_add64"), x, luajit_perform64, 0, NULL);
+    // this perform method simply copies the input to the output, offsetting the value
+    while (n--)
+        *outL++ = *inL++ + x->offset;
 }
 
