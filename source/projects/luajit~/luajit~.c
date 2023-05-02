@@ -1,13 +1,11 @@
 /**
     @file
     luajit~: luajit for Max
-    original by: jeremy bernstein, jeremy@bootsquad.com
-    @ingroup examples
 */
 
-#include "ext.h"            // standard Max include, always required (except in Jitter)
-#include "ext_obex.h"       // required for "new" style objects
-#include "z_dsp.h"          // required for MSP objects
+#include "ext.h"
+#include "ext_obex.h"
+#include "z_dsp.h"
 
 #include <lua.h>
 #include <lualib.h>
@@ -68,20 +66,22 @@ int run_lua_file(t_mlj *x, const char* path)
 }
 
 
-int luaAdd(t_mlj *x, int a, int b) {
-   // Push the add function on the top of the lua stack
-   lua_getglobal(x->L, "add");
+float lua_dsp(t_mlj *x, float audio_in, float n_samples) {
+   // Push the function on the top of the lua stack
+   lua_getglobal(x->L, "dsp");
    // Push the first argument on the top of the lua stack
-   lua_pushnumber(x->L, a);
+   lua_pushnumber(x->L, audio_in);
    // Push the second argument on the top of the lua stack
-   lua_pushnumber(x->L, b);
+   lua_pushnumber(x->L, n_samples);
    // Call the function with 2 arguments, returning 1 result
    lua_call(x->L, 2, 1);
    // Get the result
-   int sum = (int)lua_tointeger(x->L, -1);
+   float result = (float)lua_tonumber(x->L, -1);
    lua_pop(x->L, 1);
-   return sum;
+   return result;
 }
+
+
 
 t_string* get_path_from_external(t_class* c, char* subpath)
 {
@@ -144,23 +144,31 @@ void ext_main(void *r)
 }
 
 
-void *mlj_init_lua(t_mlj *x)
+void mlj_run_file(t_mlj *x)
 {
-    x->L = luaL_newstate();
-    luaL_openlibs(x->L);  /* opens the standard libraries */
     if (x->filename != gensym("")) {
         char norm_path[MAX_PATH_CHARS];
         path_nameconform(x->filename->s_name, norm_path, 
             PATH_STYLE_MAX, PATH_TYPE_BOOT);
         if (access(norm_path, F_OK) == 0) { // file exists in path
+            post("run %s", norm_path);
             run_lua_file(x, norm_path);
         } else { // try in the example folder
             t_string* path = get_path_from_package(mlj_class, "/examples/");
             string_append(path, x->filename->s_name);
             const char* lua_file = string_getptr(path);
+            post("run %s", lua_file);
             run_lua_file(x, lua_file);
         }
-    }
+    }    
+}
+
+
+void *mlj_init_lua(t_mlj *x)
+{
+    x->L = luaL_newstate();
+    luaL_openlibs(x->L);  /* opens the standard libraries */
+    mlj_run_file(x);
 }
 
 void *mlj_new(t_symbol *s, long argc, t_atom *argv)
@@ -205,7 +213,7 @@ void mlj_assist(t_mlj *x, void *b, long m, long a, char *s)
 
 void mlj_bang(t_mlj *x)
 {
-    post("lua add(10,2): %d", luaAdd(x, 10,2));
+    mlj_run_file(x);
 }
 
 
@@ -244,6 +252,7 @@ void mlj_perform64(t_mlj *x, t_object *dsp64, double **ins, long numins, double 
 
     // this perform method simply copies the input to the output, offsetting the value
     while (n--)
-        *outL++ = *inL++ + x->offset;
+        *outL++ = lua_dsp(x, *inL++ + x->offset, n);
+        // *outL++ = *inL++ + x->offset;
 }
 

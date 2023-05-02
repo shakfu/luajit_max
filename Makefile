@@ -1,17 +1,17 @@
 SCRIPTS := source/scripts
+BUILD := build
+LUAJIT := $(BUILD)/deps/luajit-install/lib/libluajit-5.1.a
 
-
-.PHONY: cmake deps fixup clean setup 
+.PHONY: cmake fixup clean setup 
 
 all: cmake
 
 
-cmake:
+cmake: $(LUAJIT)
 	@mkdir -p build && cd build && cmake .. && make
 
-deps:
+$(LUAJIT):
 	@bash $(SCRIPTS)/build_dependencies.sh
-
 
 fixup: cmake
 	@bash $(SCRIPTS)/fix_bundle.sh
