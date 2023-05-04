@@ -1,3 +1,4 @@
+-- dsp.lua
 
 SAMPLE_RATE = 44100.0
 
@@ -60,5 +61,3 @@ base = function(x, n, p1)
     return x / 2
 end
 
-
-dsp = lpf2

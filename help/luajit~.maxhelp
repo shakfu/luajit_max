@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 435.0, 185.0, 689.0, 504.0 ],
+		"rect" : [ 510.0, 182.0, 689.0, 504.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 10.0,
@@ -40,6 +40,19 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-13",
+					"items" : [ "base", ",", "lpf1", ",", "lpf2", ",", "lpf3", ",", "saturate" ],
+					"maxclass" : "umenu",
+					"numinlets" : 1,
+					"numoutlets" : 3,
+					"outlettype" : [ "int", "", "" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 17.0, 292.0, 67.0, 21.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"format" : 6,
 					"id" : "obj-10",
 					"maxclass" : "flonum",
@@ -47,7 +60,7 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "", "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 90.0, 276.0, 50.0, 21.0 ]
+					"patching_rect" : [ 103.0, 257.0, 50.0, 21.0 ]
 				}
 
 			}
@@ -60,7 +73,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 90.0, 136.0, 20.0, 112.0 ],
+					"patching_rect" : [ 103.0, 121.0, 20.0, 112.0 ],
 					"size" : 1.0
 				}
 
@@ -75,7 +88,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 164.0, 188.0, 18.0, 50.0 ],
+					"patching_rect" : [ 177.0, 193.0, 18.0, 50.0 ],
 					"size" : 3,
 					"value" : 2
 				}
@@ -88,7 +101,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
-					"patching_rect" : [ 164.0, 252.0, 49.0, 21.0 ],
+					"patching_rect" : [ 177.0, 257.0, 49.0, 21.0 ],
 					"text" : "gate~ 2"
 				}
 
@@ -99,7 +112,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 343.0, 276.0, 26.0, 19.0 ],
+					"patching_rect" : [ 356.0, 281.0, 26.0, 19.0 ],
 					"style" : "helpfile_label",
 					"text" : "Hz"
 				}
@@ -294,7 +307,7 @@
  ]
 					}
 ,
-					"patching_rect" : [ 288.0, 246.0, 71.0, 23.0 ],
+					"patching_rect" : [ 301.0, 251.0, 71.0, 23.0 ],
 					"saved_object_attributes" : 					{
 						"description" : "",
 						"digest" : "",
@@ -323,7 +336,7 @@
 					"numoutlets" : 1,
 					"offset" : [ 0.0, 0.0 ],
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 194.0, 116.0, 225.0, 95.0 ],
+					"patching_rect" : [ 207.0, 121.0, 225.0, 95.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -337,7 +350,7 @@
 					"orientation" : 1,
 					"outlettype" : [ "" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 288.0, 218.0, 140.0, 20.0 ],
+					"patching_rect" : [ 301.0, 223.0, 140.0, 20.0 ],
 					"size" : 256.0
 				}
 
@@ -353,7 +366,7 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "", "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 288.0, 276.0, 55.0, 23.0 ],
+					"patching_rect" : [ 301.0, 281.0, 55.0, 23.0 ],
 					"triangle" : 0
 				}
 
@@ -367,7 +380,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 193.0, 328.0, 114.0, 23.0 ],
+					"patching_rect" : [ 206.0, 333.0, 114.0, 23.0 ],
 					"text" : "onepole~ 300. Hz"
 				}
 
@@ -375,12 +388,12 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-11",
-					"linecount" : 3,
+					"linecount" : 4,
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 19.0, 64.0, 400.0, 43.0 ],
-					"text" : "Update the lua.script in the examples folder with audio on to demonstrate how audio changes to real-time adjustments in the luajit dsp function in that file."
+					"patching_rect" : [ 16.0, 49.0, 614.0, 55.0 ],
+					"text" : "Select difference function names from the drop-down menu to demonstrate how to change the underlying dsp function.\n\nYou can also update the lua.script in the examples folder and add dsp functions and then just add the name of the function to the umenu object."
 				}
 
 			}
@@ -403,7 +416,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 7.0, 262.0, 82.0, 19.0 ],
+					"patching_rect" : [ 17.0, 192.0, 82.0, 19.0 ],
 					"text" : "run script.lua"
 				}
 
@@ -416,7 +429,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 36.0, 293.0, 24.0, 24.0 ]
+					"patching_rect" : [ 55.0, 223.0, 24.0, 24.0 ]
 				}
 
 			}
@@ -426,7 +439,7 @@
 					"maxclass" : "ezdac~",
 					"numinlets" : 2,
 					"numoutlets" : 0,
-					"patching_rect" : [ 167.0, 404.0, 45.0, 45.0 ]
+					"patching_rect" : [ 180.0, 409.0, 45.0, 45.0 ]
 				}
 
 			}
@@ -439,8 +452,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 90.0, 328.0, 92.0, 21.0 ],
-					"text" : "luajit~ script.lua"
+					"patching_rect" : [ 103.0, 333.0, 82.0, 21.0 ],
+					"text" : "luajit~ dsp.lua"
 				}
 
 			}
@@ -465,6 +478,13 @@
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
 					"source" : [ "obj-10", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-13", 1 ]
 				}
 
 			}
@@ -520,7 +540,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-59", 1 ],
-					"midpoints" : [ 297.5, 324.0, 297.5, 324.0 ],
+					"midpoints" : [ 310.5, 329.0, 310.5, 329.0 ],
 					"source" : [ "obj-55", 0 ]
 				}
 

@@ -19,11 +19,12 @@
 
 // struct to represent the object's state
 typedef struct _mlj {
-    t_pxobject ob;       // the object itself (t_pxobject in MSP instead of t_object)
-    lua_State *L;        // lua state
-    t_symbol*  filename; // filename of lua file in Max search path
-    double param1;       // the value of a property of our object
-    double v1;           // historical value;
+    t_pxobject ob;      // the object itself (t_pxobject in MSP instead of t_object)
+    lua_State *L;       // lua state
+    t_symbol* filename; // filename of lua file in Max search path
+    t_symbol* funcname; // name of lua dsp function to use
+    double param1;      // the value of a property of our object
+    double v1;          // historical value;
 } t_mlj;
 
 
@@ -33,6 +34,7 @@ void mlj_init_lua(t_mlj *x);
 void mlj_free(t_mlj *x);
 void mlj_assist(t_mlj *x, void *b, long m, long a, char *s);
 void mlj_bang(t_mlj *x);
+void mlj_anything(t_mlj* x, t_symbol* s, long argc, t_atom* argv);
 void mlj_float(t_mlj *x, double f);
 void mlj_dsp64(t_mlj *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
 void mlj_perform64(t_mlj *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
@@ -68,9 +70,8 @@ int run_lua_file(t_mlj *x, const char* path)
     return 0; 
 }
 
-
 float lua_dsp(t_mlj *x, float audio_in, float audio_prev, float n_samples, float param1) {
-   lua_getglobal(x->L, "dsp");
+   lua_getglobal(x->L, x->funcname->s_name);
    lua_pushnumber(x->L, audio_in);
    lua_pushnumber(x->L, audio_prev);
    lua_pushnumber(x->L, n_samples);
@@ -82,7 +83,6 @@ float lua_dsp(t_mlj *x, float audio_in, float audio_prev, float n_samples, float
    lua_pop(x->L, 1);
    return result;
 }
-
 
 
 t_string* get_path_from_external(t_class* c, char* subpath)
@@ -136,6 +136,7 @@ void ext_main(void *r)
     t_class *c = class_new("luajit~", (method)mlj_new, (method)mlj_free, (long)sizeof(t_mlj), 0L, A_GIMME, 0);
 
     class_addmethod(c, (method)mlj_float,    "float",    A_FLOAT, 0);
+    class_addmethod(c, (method)mlj_anything, "anything", A_GIMME, 0);
     class_addmethod(c, (method)mlj_bang,     "bang",              0);
     class_addmethod(c, (method)mlj_dsp64,    "dsp64",    A_CANT,  0);
     class_addmethod(c, (method)mlj_assist,   "assist",   A_CANT,  0);
@@ -186,6 +187,7 @@ void *mlj_new(t_symbol *s, long argc, t_atom *argv)
         x->param1 = 0.0;
         x->v1 = 0.0;
         x->filename = atom_getsymarg(0, argc, argv); // 1st arg of object
+        x->funcname = gensym("base");
         post("filename: %s", x->filename->s_name);
 
         // init lua
@@ -195,9 +197,6 @@ void *mlj_new(t_symbol *s, long argc, t_atom *argv)
 }
 
 
-
-
-// NOT CALLED!, we use dsp_free for a generic free function
 void mlj_free(t_mlj *x)
 {
     lua_close(x->L);
@@ -220,6 +219,15 @@ void mlj_bang(t_mlj *x)
     mlj_run_file(x);
 }
 
+void mlj_anything(t_mlj* x, t_symbol* s, long argc, t_atom* argv)
+{
+
+    if (s != gensym("")) {
+        post("funcname: %s", s->s_name);
+        x->funcname = s;
+    }
+}
+
 
 void mlj_float(t_mlj *x, double f)
 {
@@ -228,22 +236,10 @@ void mlj_float(t_mlj *x, double f)
 }
 
 
-
-// registers a function for the signal chain in Max
 void mlj_dsp64(t_mlj *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
     post("sample rate: %f", samplerate);
     post("maxvectorsize: %d", maxvectorsize);
-
-
-    // instead of calling dsp_add(), we send the "dsp_add64" message to the object representing the dsp chain
-    // the arguments passed are:
-    // 1: the dsp64 object passed-in by the calling function
-    // 2: the symbol of the "dsp_add64" message we are sending
-    // 3: a pointer to your object
-    // 4: a pointer to your 64-bit perform method
-    // 5: flags to alter how the signal chain handles your object -- just pass 0
-    // 6: a generic pointer that you can use to pass any additional data to your perform method
 
     object_method(dsp64, gensym("dsp_add64"), x, mlj_perform64, 0, NULL);
 }
@@ -268,6 +264,8 @@ void mlj_perform64(t_mlj *x, t_object *dsp64, double **ins, long numins, double 
 }
 
 #else
+
+// experiment in c here
 
 void mlj_perform64(t_mlj *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
