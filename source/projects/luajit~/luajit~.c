@@ -14,19 +14,22 @@
 #include <libgen.h>
 #include <unistd.h>
 
+#define USE_LUA 1
+
 
 // struct to represent the object's state
 typedef struct _mlj {
-    t_pxobject ob;         // the object itself (t_pxobject in MSP instead of t_object)
-    double     offset;     // the value of a property of our object
-    lua_State *L;          // lua state
-    t_symbol*  filename;   // filename of lua file in Max search path
+    t_pxobject ob;       // the object itself (t_pxobject in MSP instead of t_object)
+    lua_State *L;        // lua state
+    t_symbol*  filename; // filename of lua file in Max search path
+    double param1;       // the value of a property of our object
+    double v1;           // historical value;
 } t_mlj;
 
 
 // method prototypes
 void *mlj_new(t_symbol *s, long argc, t_atom *argv);
-void *mlj_init_lua(t_mlj *x);
+void mlj_init_lua(t_mlj *x);
 void mlj_free(t_mlj *x);
 void mlj_assist(t_mlj *x, void *b, long m, long a, char *s);
 void mlj_bang(t_mlj *x);
@@ -66,15 +69,14 @@ int run_lua_file(t_mlj *x, const char* path)
 }
 
 
-float lua_dsp(t_mlj *x, float audio_in, float n_samples) {
-   // Push the function on the top of the lua stack
+float lua_dsp(t_mlj *x, float audio_in, float audio_prev, float n_samples, float param1) {
    lua_getglobal(x->L, "dsp");
-   // Push the first argument on the top of the lua stack
    lua_pushnumber(x->L, audio_in);
-   // Push the second argument on the top of the lua stack
+   lua_pushnumber(x->L, audio_prev);
    lua_pushnumber(x->L, n_samples);
-   // Call the function with 2 arguments, returning 1 result
-   lua_call(x->L, 2, 1);
+   lua_pushnumber(x->L, param1);
+   // Call the function with 4 arguments, returning 1 result
+   lua_call(x->L, 4, 1);
    // Get the result
    float result = (float)lua_tonumber(x->L, -1);
    lua_pop(x->L, 1);
@@ -164,12 +166,13 @@ void mlj_run_file(t_mlj *x)
 }
 
 
-void *mlj_init_lua(t_mlj *x)
+void mlj_init_lua(t_mlj *x)
 {
     x->L = luaL_newstate();
     luaL_openlibs(x->L);  /* opens the standard libraries */
     mlj_run_file(x);
 }
+
 
 void *mlj_new(t_symbol *s, long argc, t_atom *argv)
 {
@@ -180,7 +183,8 @@ void *mlj_new(t_symbol *s, long argc, t_atom *argv)
         // use 0 if you don't need inlets
 
         outlet_new(x, "signal");        // signal outlet (note "signal" rather than NULL)
-        x->offset = 0.0;
+        x->param1 = 0.0;
+        x->v1 = 0.0;
         x->filename = atom_getsymarg(0, argc, argv); // 1st arg of object
         post("filename: %s", x->filename->s_name);
 
@@ -219,8 +223,8 @@ void mlj_bang(t_mlj *x)
 
 void mlj_float(t_mlj *x, double f)
 {
-    x->offset = f;
-    post("offset: %f", x->offset);
+    x->param1 = f;
+    post("param1: %f", x->param1);
 }
 
 
@@ -228,7 +232,9 @@ void mlj_float(t_mlj *x, double f)
 // registers a function for the signal chain in Max
 void mlj_dsp64(t_mlj *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-    post("my sample rate is: %f", samplerate);
+    post("sample rate: %f", samplerate);
+    post("maxvectorsize: %d", maxvectorsize);
+
 
     // instead of calling dsp_add(), we send the "dsp_add64" message to the object representing the dsp chain
     // the arguments passed are:
@@ -243,16 +249,41 @@ void mlj_dsp64(t_mlj *x, t_object *dsp64, short *count, double samplerate, long 
 }
 
 
-// this is the 64-bit perform method audio vectors
+#if defined USE_LUA
+
 void mlj_perform64(t_mlj *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
     t_double *inL = ins[0];     // we get audio for each inlet of the object from the **ins argument
     t_double *outL = outs[0];   // we get audio for each outlet of the object from the **outs argument
-    int n = sampleframes;
+    int n = sampleframes;       // n = 64
+    double v1 = x->v1;
 
-    // this perform method simply copies the input to the output, offsetting the value
-    while (n--)
-        *outL++ = lua_dsp(x, *inL++ + x->offset, n);
-        // *outL++ = *inL++ + x->offset;
+    while (n--) {
+        v1 = lua_dsp(x, *inL++, v1, n, x->param1);
+        *outL++ = v1;
+    }
+
+    x->v1 = v1;
+
 }
 
+#else
+
+void mlj_perform64(t_mlj *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+{
+    t_double *inL = ins[0];     // we get audio for each inlet of the object from the **ins argument
+    t_double *outL = outs[0];   // we get audio for each outlet of the object from the **outs argument
+    int n = sampleframes;       // n = 64
+    double v0;
+    double b = 1 - x->param1;
+    double v1 = x->v1;
+
+    while (n--) {
+        v0 = (*inL++);
+        v1 += b * (v0 - v1);
+        *outL++ = v1;
+    }
+    x->v1 = v1;
+}
+
+#endif
