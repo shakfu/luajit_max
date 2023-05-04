@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 510.0, 182.0, 689.0, 504.0 ],
+		"rect" : [ 414.0, 172.0, 689.0, 504.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 10.0,
@@ -388,12 +388,12 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-11",
-					"linecount" : 4,
+					"linecount" : 5,
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 16.0, 49.0, 614.0, 55.0 ],
-					"text" : "Select difference function names from the drop-down menu to demonstrate how to change the underlying dsp function.\n\nYou can also update the lua.script in the examples folder and add dsp functions and then just add the name of the function to the umenu object."
+					"patching_rect" : [ 16.0, 49.0, 614.0, 67.0 ],
+					"text" : "Select lua function names from the drop-down menu to change the underlying dsp function. Note that the `base` function does nothing except attenuate the signal.\n\nYou can also update the lua.script in the examples folder and add dsp functions and then just add the name of the function to the umenu object."
 				}
 
 			}
