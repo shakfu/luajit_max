@@ -4,7 +4,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 #########################################################
 # MAX EXTERNAL
 #############################################################
-
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment version" FORCE)
 
 set(STK ${CMAKE_BINARY_DIR}/deps/stk-install)
 set(STK_INCLUDE ${STK}/include/stk)
