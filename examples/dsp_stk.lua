@@ -27,25 +27,24 @@ sine = function(x, fb, n, freq, time, phase, phase_offset)
 end
 
 
--- local _delay = stk.Delay() -- (delay = 0, maxDelay = 4096)
--- delay = function(x, fb, n, delay)
---    _delay:setDelay(delay)
+local _delay = stk.Delay(9, 4096) -- (delay = 0, maxDelay = 4096)
+delay = function(x, fb, n, delay, fb_ratio, balance, tap_delay)
+   _delay:setDelay(delay)
+   local x1 = x + (fb * fb_ratio)
+   local wet_val = balance * _delay:tick(x1)
+   local dry_val = (1 - balance) * x1
+   return wet_val + dry_val 
 
--- -- getMaximumDelay
--- -- setMaximumDelay
--- -- setDelay
--- -- getDelay
--- -- tapIn
--- -- tapOut
--- -- addTo
--- -- lastOut
--- -- nextOut
--- -- energy
-
--- end
+   -- tapIn
+   -- tapOut
+   -- addTo
+   -- lastOut
+   -- nextOut
+   -- energy
+end
 
 
-base = function(x, n, p0, p1, p2, p4)
+base = function(x, n, p0, p1, p2, p3)
    return x / 2
 end
 
