@@ -70,11 +70,11 @@ class Constructor(Method):
 
 
 class CppClass:
-    def __init__(self, entry):
-        self.name = entry['name']
-        self.destructor = entry['destructor']
-        self.constructors = [self.add_constructor(c) for c in entry['constructors']]
-        self.methods = [self.add_method(c) for c in entry['methods']]
+    def __init__(self, name, destructor=None, constructors=None, methods=None):
+        self.name = name
+        self.destructor = destructor
+        self.constructors = constructors or []
+        self.methods = methods or []
 
     def __str__(self):
         name = self.name
@@ -90,21 +90,6 @@ class CppClass:
 
         return "\n".join(res)
 
-
-    def add_constructor(self, c):
-        # name, params
-        ps = []
-        for p in c['params']:
-            ps.append(Param(**p))
-        return Constructor(c['name'], ps, parent=self)
-
-
-    def add_method(self, m):
-        # name, params, returns
-        ps = []
-        for p in m['params']:
-            ps.append(MethodParam(**p))
-        return Method(m['name'], ps, m['returns'], parent=self)
 
 
 
@@ -129,56 +114,42 @@ def parse(name=None):
 def get_class(d):
     d = d['namespace']['namespaces']['stk']
 
-    r = {
-        'name': None,
-        'constructors':[],
-        'destructor': None,
-        'methods':[],
-    }
-
-    r['name'] = d['classes'][0]['class_decl']['typename']['segments'][0]['name']
+    klass = CppClass(name=d['classes'][0]['class_decl']['typename']['segments'][0]['name'])
 
     for m in d['classes'][0]['methods']:
         if m['access'] == 'public':
             if m['constructor']:
-                c = dict(
-                    name = m['name']['segments'][0]['name'],
-                    params = [],
-                    # doc = m['doxygen']
-                )
+                c = Constructor(name=m['name']['segments'][0]['name'], parent=klass)
 
                 for p in m['parameters']:
                     name = p['name']
                     if 'typename' in p['type']:
                         typ = p['type']['typename']['segments'][0]['name']
-                        c['params'].append(dict(name=name, type=typ, is_ref=False))
+                        c.params.append(Param(name=name, type=typ, is_ref=False))
                     elif 'ref_to' in p['type']:
                         typ = p['type']['ref_to']['segments'][0]['name']
-                        c['params'].append(dict(name=name, type=typ, is_ref=True))
+                        c.params.append(Param(name=name, type=typ, is_ref=True))
 
-                r['constructors'].append(c)
+                klass.constructors.append(c)
             elif m['destructor']:
-                r['destructor'] = m['name']['segments'][0]['name']
+                klass.destructor = m['name']['segments'][0]['name']
             else:
-                f = dict(
-                    name = m['name']['segments'][0]['name'],
-                    params = [],
-                    returns = None,
-                )
+                f = Method(name = m['name']['segments'][0]['name'], parent=klass)
+
                 if 'typename' in m['return_type']:
-                    f['returns'] = m['return_type']['typename']['segments'][0]['name']
+                    f.returns = m['return_type']['typename']['segments'][0]['name']
                 for p in m['parameters']:
                     name = p['name']
                     if 'typename' in p['type']:
                         typ = p['type']['typename']['segments'][0]['name']
-                        f['params'].append(dict(name=name, type=typ, is_ref=False))
+                        f.params.append(MethodParam(name=name, type=typ, is_ref=False))
                     elif 'ref_to' in p['type']:
                         typ = p['type']['ref_to']['typename']['segments'][0]['name']
-                        f['params'].append(dict(name=name, type=typ, is_ref=True))
+                        f.params.append(MethodParam(name=name, type=typ, is_ref=True))
 
-                r['methods'].append(f)
+                klass.methods.append(f)
 
-    return CppClass(r)
+    return klass
 
 
 def main():

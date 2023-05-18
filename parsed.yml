@@ -1,0 +1,1154 @@
+- defines:
+  - content: STK_DELAY_H
+  includes:
+  - filename: '"Filter.h"'
+  namespace:
+    classes: []
+    doxygen: null
+    enums: []
+    forward_decls: []
+    functions: []
+    inline: false
+    method_impls: []
+    name: ''
+    namespaces:
+      stk:
+        classes:
+        - class_decl:
+            access: null
+            bases:
+            - access: public
+              param_pack: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: Filter
+                  specialization: null
+              virtual: false
+            doxygen: null
+            explicit: false
+            final: false
+            template: null
+            typename:
+              classkey: class
+              has_typename: false
+              segments:
+              - name: Delay
+                specialization: null
+          classes: []
+          enums: []
+          fields:
+          - access: protected
+            bits: null
+            constexpr: false
+            doxygen: null
+            mutable: false
+            name: inPoint_
+            static: false
+            type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: unsigned long
+              volatile: false
+            value: null
+          - access: protected
+            bits: null
+            constexpr: false
+            doxygen: null
+            mutable: false
+            name: outPoint_
+            static: false
+            type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: unsigned long
+              volatile: false
+            value: null
+          - access: protected
+            bits: null
+            constexpr: false
+            doxygen: null
+            mutable: false
+            name: delay_
+            static: false
+            type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: unsigned long
+              volatile: false
+            value: null
+          forward_decls: []
+          friends: []
+          methods:
+          - access: public
+            const: false
+            constexpr: false
+            constructor: true
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: "/*!\n    An StkError will be thrown if the delay parameter is\
+              \ less than\n    zero, the maximum delay parameter is less than one,\
+              \ or the delay\n    parameter is greater than the maxDelay value.\n\
+              */"
+            explicit: false
+            extern: false
+            final: false
+            has_body: false
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: Delay
+                specialization: null
+            noexcept: null
+            override: false
+            parameters:
+            - default:
+                tokens:
+                - type: INT_CONST_OCT
+                  value: '0'
+              name: delay
+              param_pack: false
+              type:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: unsigned long
+                volatile: false
+            - default:
+                tokens:
+                - type: INT_CONST_DEC
+                  value: '4095'
+              name: maxDelay
+              param_pack: false
+              type:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: unsigned long
+                volatile: false
+            pure_virtual: false
+            ref_qualifier: null
+            return_type: null
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: false
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: true
+            doxygen: //! Class destructor.
+            explicit: false
+            extern: false
+            final: false
+            has_body: false
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: ~Delay
+                specialization: null
+            noexcept: null
+            override: false
+            parameters: []
+            pure_virtual: false
+            ref_qualifier: null
+            return_type: null
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: false
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: //! Get the maximum delay-line length.
+            explicit: false
+            extern: false
+            final: false
+            has_body: true
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: getMaximumDelay
+                specialization: null
+            noexcept: null
+            override: false
+            parameters: []
+            pure_virtual: false
+            ref_qualifier: null
+            return_type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: unsigned long
+              volatile: false
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: false
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: "/*!\n    This method should generally only be used during initial\
+              \ setup\n    of the delay line.  If it is used between calls to the\
+              \ tick()\n    function, without a call to clear(), a signal discontinuity\
+              \ will\n    likely occur.  If the current maximum length is greater\
+              \ than the\n    new length, no memory allocation change is made.\n*/"
+            explicit: false
+            extern: false
+            final: false
+            has_body: false
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: setMaximumDelay
+                specialization: null
+            noexcept: null
+            override: false
+            parameters:
+            - default: null
+              name: delay
+              param_pack: false
+              type:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: unsigned long
+                volatile: false
+            pure_virtual: false
+            ref_qualifier: null
+            return_type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: void
+              volatile: false
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: false
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: "/*!\n    The valid range for \\e delay is from 0 to the maximum\
+              \ delay-line length.\n*/"
+            explicit: false
+            extern: false
+            final: false
+            has_body: false
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: setDelay
+                specialization: null
+            noexcept: null
+            override: false
+            parameters:
+            - default: null
+              name: delay
+              param_pack: false
+              type:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: unsigned long
+                volatile: false
+            pure_virtual: false
+            ref_qualifier: null
+            return_type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: void
+              volatile: false
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: true
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: //! Return the current delay-line length.
+            explicit: false
+            extern: false
+            final: false
+            has_body: true
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: getDelay
+                specialization: null
+            noexcept: null
+            override: false
+            parameters: []
+            pure_virtual: false
+            ref_qualifier: null
+            return_type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: unsigned long
+              volatile: false
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: false
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: "/*!\n    The tap point is determined modulo the delay-line length\
+              \ and is\n    relative to the last input value (i.e., a tapDelay of\
+              \ zero returns\n    the last input value).\n*/"
+            explicit: false
+            extern: false
+            final: false
+            has_body: false
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: tapOut
+                specialization: null
+            noexcept: null
+            override: false
+            parameters:
+            - default: null
+              name: tapDelay
+              param_pack: false
+              type:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: unsigned long
+                volatile: false
+            pure_virtual: false
+            ref_qualifier: null
+            return_type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: StkFloat
+                  specialization: null
+              volatile: false
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: false
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: //! Set the \e value at \e tapDelay samples from the delay-line
+              input.
+            explicit: false
+            extern: false
+            final: false
+            has_body: false
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: tapIn
+                specialization: null
+            noexcept: null
+            override: false
+            parameters:
+            - default: null
+              name: value
+              param_pack: false
+              type:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: StkFloat
+                    specialization: null
+                volatile: false
+            - default: null
+              name: tapDelay
+              param_pack: false
+              type:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: unsigned long
+                volatile: false
+            pure_virtual: false
+            ref_qualifier: null
+            return_type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: void
+              volatile: false
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: false
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: "/*!\n    The new value is returned.  The tap point is determined\
+              \ modulo\n    the delay-line length and is relative to the last input\
+              \ value\n    (i.e., a tapDelay of zero sums into the last input value).\n\
+              */"
+            explicit: false
+            extern: false
+            final: false
+            has_body: false
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: addTo
+                specialization: null
+            noexcept: null
+            override: false
+            parameters:
+            - default: null
+              name: value
+              param_pack: false
+              type:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: StkFloat
+                    specialization: null
+                volatile: false
+            - default: null
+              name: tapDelay
+              param_pack: false
+              type:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: unsigned long
+                volatile: false
+            pure_virtual: false
+            ref_qualifier: null
+            return_type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: StkFloat
+                  specialization: null
+              volatile: false
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: true
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: //! Return the last computed output value.
+            explicit: false
+            extern: false
+            final: false
+            has_body: true
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: lastOut
+                specialization: null
+            noexcept: null
+            override: false
+            parameters: []
+            pure_virtual: false
+            ref_qualifier: null
+            return_type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: StkFloat
+                  specialization: null
+              volatile: false
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: false
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: "/*!\n    This method is valid only for delay settings greater\
+              \ than zero!\n*/"
+            explicit: false
+            extern: false
+            final: false
+            has_body: true
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: nextOut
+                specialization: null
+            noexcept: null
+            override: false
+            parameters: []
+            pure_virtual: false
+            ref_qualifier: null
+            return_type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: StkFloat
+                  specialization: null
+              volatile: false
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: true
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: //! Calculate and return the signal energy in the delay-line.
+            explicit: false
+            extern: false
+            final: false
+            has_body: false
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: energy
+                specialization: null
+            noexcept: null
+            override: false
+            parameters: []
+            pure_virtual: false
+            ref_qualifier: null
+            return_type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: StkFloat
+                  specialization: null
+              volatile: false
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: false
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: //! Input one sample to the filter and return one output.
+            explicit: false
+            extern: false
+            final: false
+            has_body: false
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: tick
+                specialization: null
+            noexcept: null
+            override: false
+            parameters:
+            - default: null
+              name: input
+              param_pack: false
+              type:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: StkFloat
+                    specialization: null
+                volatile: false
+            pure_virtual: false
+            ref_qualifier: null
+            return_type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: StkFloat
+                  specialization: null
+              volatile: false
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: false
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: "/*!\n    The StkFrames argument reference is returned.  The\
+              \ \\c channel\n    argument must be less than the number of channels\
+              \ in the\n    StkFrames argument (the first channel is specified by\
+              \ 0).\n    However, range checking is only performed if _STK_DEBUG_\
+              \ is\n    defined during compilation, in which case an out-of-range\
+              \ value\n    will trigger an StkError exception.\n*/"
+            explicit: false
+            extern: false
+            final: false
+            has_body: false
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: tick
+                specialization: null
+            noexcept: null
+            override: false
+            parameters:
+            - default: null
+              name: frames
+              param_pack: false
+              type:
+                ref_to:
+                  const: false
+                  typename:
+                    classkey: null
+                    has_typename: false
+                    segments:
+                    - name: StkFrames
+                      specialization: null
+                  volatile: false
+            - default:
+                tokens:
+                - type: INT_CONST_OCT
+                  value: '0'
+              name: channel
+              param_pack: false
+              type:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: unsigned int
+                volatile: false
+            pure_virtual: false
+            ref_qualifier: null
+            return_type:
+              ref_to:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: StkFrames
+                    specialization: null
+                volatile: false
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          - access: public
+            const: false
+            constexpr: false
+            constructor: false
+            default: false
+            deleted: false
+            destructor: false
+            doxygen: "/*!\n    The \\c iFrames object reference is returned.  Each\
+              \ channel\n    argument must be less than the number of channels in\
+              \ the\n    corresponding StkFrames argument (the first channel is specified\n\
+              \    by 0).  However, range checking is only performed if _STK_DEBUG_\n\
+              \    is defined during compilation, in which case an out-of-range value\n\
+              \    will trigger an StkError exception.\n*/"
+            explicit: false
+            extern: false
+            final: false
+            has_body: false
+            has_trailing_return: false
+            inline: false
+            msvc_convention: null
+            name:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: tick
+                specialization: null
+            noexcept: null
+            override: false
+            parameters:
+            - default: null
+              name: iFrames
+              param_pack: false
+              type:
+                ref_to:
+                  const: false
+                  typename:
+                    classkey: null
+                    has_typename: false
+                    segments:
+                    - name: StkFrames
+                      specialization: null
+                  volatile: false
+            - default: null
+              name: oFrames
+              param_pack: false
+              type:
+                ref_to:
+                  const: false
+                  typename:
+                    classkey: null
+                    has_typename: false
+                    segments:
+                    - name: StkFrames
+                      specialization: null
+                  volatile: false
+            - default:
+                tokens:
+                - type: INT_CONST_OCT
+                  value: '0'
+              name: iChannel
+              param_pack: false
+              type:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: unsigned int
+                volatile: false
+            - default:
+                tokens:
+                - type: INT_CONST_OCT
+                  value: '0'
+              name: oChannel
+              param_pack: false
+              type:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: unsigned int
+                volatile: false
+            pure_virtual: false
+            ref_qualifier: null
+            return_type:
+              ref_to:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: StkFrames
+                    specialization: null
+                volatile: false
+            static: false
+            template: null
+            throw: null
+            vararg: false
+            virtual: false
+            volatile: false
+          typedefs: []
+          using: []
+          using_alias: []
+        doxygen: null
+        enums: []
+        forward_decls: []
+        functions: []
+        inline: false
+        method_impls:
+        - access: null
+          const: false
+          constexpr: false
+          constructor: false
+          default: false
+          deleted: false
+          destructor: false
+          doxygen: null
+          explicit: false
+          extern: false
+          final: false
+          has_body: true
+          has_trailing_return: false
+          inline: true
+          msvc_convention: null
+          name:
+            classkey: null
+            has_typename: false
+            segments:
+            - name: Delay
+              specialization: null
+            - name: tick
+              specialization: null
+          noexcept: null
+          override: false
+          parameters:
+          - default: null
+            name: input
+            param_pack: false
+            type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: StkFloat
+                  specialization: null
+              volatile: false
+          pure_virtual: false
+          ref_qualifier: null
+          return_type:
+            const: false
+            typename:
+              classkey: null
+              has_typename: false
+              segments:
+              - name: StkFloat
+                specialization: null
+            volatile: false
+          static: false
+          template: null
+          throw: null
+          vararg: false
+          virtual: false
+          volatile: false
+        - access: null
+          const: false
+          constexpr: false
+          constructor: false
+          default: false
+          deleted: false
+          destructor: false
+          doxygen: null
+          explicit: false
+          extern: false
+          final: false
+          has_body: true
+          has_trailing_return: false
+          inline: true
+          msvc_convention: null
+          name:
+            classkey: null
+            has_typename: false
+            segments:
+            - name: Delay
+              specialization: null
+            - name: tick
+              specialization: null
+          noexcept: null
+          override: false
+          parameters:
+          - default: null
+            name: frames
+            param_pack: false
+            type:
+              ref_to:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: StkFrames
+                    specialization: null
+                volatile: false
+          - default: null
+            name: channel
+            param_pack: false
+            type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: unsigned int
+              volatile: false
+          pure_virtual: false
+          ref_qualifier: null
+          return_type:
+            ref_to:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: StkFrames
+                  specialization: null
+              volatile: false
+          static: false
+          template: null
+          throw: null
+          vararg: false
+          virtual: false
+          volatile: false
+        - access: null
+          const: false
+          constexpr: false
+          constructor: false
+          default: false
+          deleted: false
+          destructor: false
+          doxygen: null
+          explicit: false
+          extern: false
+          final: false
+          has_body: true
+          has_trailing_return: false
+          inline: true
+          msvc_convention: null
+          name:
+            classkey: null
+            has_typename: false
+            segments:
+            - name: Delay
+              specialization: null
+            - name: tick
+              specialization: null
+          noexcept: null
+          override: false
+          parameters:
+          - default: null
+            name: iFrames
+            param_pack: false
+            type:
+              ref_to:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: StkFrames
+                    specialization: null
+                volatile: false
+          - default: null
+            name: oFrames
+            param_pack: false
+            type:
+              ref_to:
+                const: false
+                typename:
+                  classkey: null
+                  has_typename: false
+                  segments:
+                  - name: StkFrames
+                    specialization: null
+                volatile: false
+          - default: null
+            name: iChannel
+            param_pack: false
+            type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: unsigned int
+              volatile: false
+          - default: null
+            name: oChannel
+            param_pack: false
+            type:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: unsigned int
+              volatile: false
+          pure_virtual: false
+          ref_qualifier: null
+          return_type:
+            ref_to:
+              const: false
+              typename:
+                classkey: null
+                has_typename: false
+                segments:
+                - name: StkFrames
+                  specialization: null
+              volatile: false
+          static: false
+          template: null
+          throw: null
+          vararg: false
+          virtual: false
+          volatile: false
+        name: stk
+        namespaces: {}
+        ns_alias: []
+        template_insts: []
+        typedefs: []
+        using: []
+        using_alias: []
+        using_ns: []
+        variables: []
+    ns_alias: []
+    template_insts: []
+    typedefs: []
+    using: []
+    using_alias: []
+    using_ns: []
+    variables: []
+  pragmas: []
