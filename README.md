@@ -39,3 +39,8 @@ ln -s $(shell pwd) "$(HOME)/Documents/Max 8/Packages/$(shell basename `pwd`)"
 ## Usage
 
 Open the help files for demonstrations of the externals.
+
+
+## References
+
+- [STK Introduction](http://www.music.mcgill.ca/~gary/307/week8/stk.html)

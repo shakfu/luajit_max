@@ -6,6 +6,7 @@
 #include "SineWave.h"
 #include "Delay.h"
 #include "FreeVerb.h"
+#include "PRCRev.h"
 #include "Moog.h"
 
 #include <cstdlib>
@@ -376,6 +377,18 @@ void lstk_init_lua(t_lstk *x)
                     luabridge::overload<stk::StkFrames&, unsigned int>(&stk::FreeVerb::tick),
                     luabridge::overload<stk::StkFrames&, stk::StkFrames&, unsigned int, unsigned int>(&stk::FreeVerb::tick))
             .endClass()
+
+            .beginClass <stk::PRCRev> ("PRCRev")
+                .addConstructor<void (*) (stk::StkFloat T60)>()
+                .addFunction("clear", &stk::PRCRev::clear)
+                .addFunction("setT60", &stk::PRCRev::setT60)
+                .addFunction("lastOut", &stk::PRCRev::lastOut)
+                .addFunction("tick", 
+                    luabridge::overload<stk::StkFloat, unsigned int>(&stk::PRCRev::tick),
+                    luabridge::overload<stk::StkFrames&, unsigned int>(&stk::PRCRev::tick),
+                    luabridge::overload<stk::StkFrames&, stk::StkFrames&, unsigned int, unsigned int>(&stk::PRCRev::tick))
+            .endClass()
+
         .endNamespace();
 
     lstk_run_file(x);
