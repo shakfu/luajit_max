@@ -23,6 +23,8 @@ public:
     std::string identify() {
         return this->name + " " + std::to_string(this->age);
     }
+
+    // void load( const char **filenames );
 };
 
 } // end namespace app
@@ -62,6 +64,7 @@ int main() {
             .beginClass <app::Person> ("Person")
                 .addConstructor <void (*) (std::string name, int age)>()
                 .addFunction("identify", &app::Person::identify)
+                // .addFunction("load", &app::Person::load)
             .endClass()
         .endNamespace();
 

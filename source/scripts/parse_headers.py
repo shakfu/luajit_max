@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
 
+"""
+parses stk headers and generate wrapping code.
+
+TODO:
+    - generate luafunc
+    - generate coll param list for each header
+    - fix missing std::* types in methods and constructors
+    - handle overloading beyond just tick methods
+
+"""
+
 import os
 from pathlib import Path
 import yaml
@@ -38,16 +49,17 @@ class Method:
         self.returns = returns
         self.parent = parent
 
+    def get_type(self, p):
+        suffix = "&" if p.is_ref else ""
+        prefix = "stk::" if p.type.startswith('Stk') else ""
+        return f"{prefix}{p.type}{suffix}"
+
+
     def __str__(self):
         name = self.name
         klass = self.parent.name
         if self.name == 'tick':
-            def get_type(p):
-                suffix = "&" if p.is_ref else ""
-                prefix = "stk::" if p.type.startswith('Stk') else ""
-                return f"{prefix}{p.type}{suffix}"
-
-            params = ', '.join(get_type(p) for p in self.params)
+            params = ', '.join(self.get_type(p) for p in self.params)
             return f'        luabridge::overload<{params}>(&stk::{klass}::{name}),'
         return f'    .addFunction("{name}", &stk::{klass}::{name})'
 
@@ -61,20 +73,33 @@ class Constructor(Method):
         self.params = params or []
         self.parent = parent
 
+    def get_type(self, p):
+        suffix = "&" if p.is_ref else ""
+        prefix = "stk::" if p.type.startswith('Stk') else ""
+        return f"{prefix}{p.type}{suffix} {p.name}"
+
     def __str__(self):
         if self.params:
-            params = ", ".join(str(p) for p in self.params)
+            params = ", ".join(self.get_type(p) for p in self.params)
             return f'    .addConstructor<void (*) ({params})>()'
         else:
             return f'    .addConstructor<void ()> ()'
 
 
 class CppClass:
-    def __init__(self, entry):
-        self.name = entry['name']
-        self.destructor = entry['destructor']
-        self.constructors = [self.add_constructor(c) for c in entry['constructors']]
-        self.methods = [self.add_method(c) for c in entry['methods']]
+    def __init__(self, name, destructor=None, constructors=None, methods=None):
+        self.name = name
+        self.destructor = destructor
+        self.constructors = constructors or []
+        self.methods = methods or []
+
+    @property
+    def nticks(self):
+        n = 0
+        for m in self.methods:
+            if m.name == "tick":
+                n += 1
+        return n
 
     def __str__(self):
         name = self.name
@@ -84,111 +109,143 @@ class CppClass:
         res = [start]
         for c in self.constructors:
             res.append(str(c))
+        ticks = 0
+        nticks = self.nticks
         for m in self.methods:
-            res.append(str(m))
+            if m.name == "tick" and ticks == 0:
+                res.append('    .addFunction("tick", ')
+                res.append(str(m))
+                ticks += 1
+            elif m.name == "tick" and ticks > 0 and ticks < nticks-1:
+                res.append(str(m))
+                ticks += 1
+            elif m.name == "tick" and ticks > 0 and ticks == nticks-1:
+                res.append(str(m)[:-1] + ')') # last of sequence
+            else:
+                res.append(str(m))
+                
         res.append(end)
 
         return "\n".join(res)
 
 
-    def add_constructor(self, c):
-        # name, params
-        ps = []
-        for p in c['params']:
-            ps.append(Param(**p))
-        return Constructor(c['name'], ps, parent=self)
-
-
-    def add_method(self, m):
-        # name, params, returns
-        ps = []
-        for p in m['params']:
-            ps.append(MethodParam(**p))
-        return Method(m['name'], ps, m['returns'], parent=self)
 
 
 
 
+# def parse(name=None):
+#     ps_list = []
+#     for f in STK_INCLUDE.iterdir():            
+#         try:
+#             if name:
+#                 if f.stem == name:
+#                     ps_list.append(parse_file(f))
+#             else:
+#                 ps_list.append(parse_file(f))
+#         except cxxheaderparser.errors.CxxParseError:
+#             print("ERROR: ", f)
+#             continue
 
-def parse(name=None):
-    ps_list = []
-    for f in STK_INCLUDE.iterdir():            
-        try:
-            if name:
-                if f.stem == name:
-                    ps_list.append(parse_file(f))
-            else:
-                ps_list.append(parse_file(f))
-        except cxxheaderparser.errors.CxxParseError:
-            print("ERROR: ", f)
-            continue
-
-    ds_list = [dataclasses.asdict(p) for p in ps_list]
-    return ds_list
+#     ds_list = [dataclasses.asdict(p) for p in ps_list]
+#     return ds_list
 
 def get_class(d):
     d = d['namespace']['namespaces']['stk']
 
-    r = {
-        'name': None,
-        'constructors':[],
-        'destructor': None,
-        'methods':[],
-    }
-
-    r['name'] = d['classes'][0]['class_decl']['typename']['segments'][0]['name']
+    klass = CppClass(name=d['classes'][0]['class_decl']['typename']['segments'][0]['name'])
 
     for m in d['classes'][0]['methods']:
         if m['access'] == 'public':
             if m['constructor']:
-                c = dict(
-                    name = m['name']['segments'][0]['name'],
-                    params = [],
-                    # doc = m['doxygen']
-                )
+                c = Constructor(name=m['name']['segments'][0]['name'], parent=klass)
 
                 for p in m['parameters']:
                     name = p['name']
                     if 'typename' in p['type']:
                         typ = p['type']['typename']['segments'][0]['name']
-                        c['params'].append(dict(name=name, type=typ, is_ref=False))
+                        c.params.append(Param(name=name, type=typ, is_ref=False))
                     elif 'ref_to' in p['type']:
                         typ = p['type']['ref_to']['segments'][0]['name']
-                        c['params'].append(dict(name=name, type=typ, is_ref=True))
+                        c.params.append(Param(name=name, type=typ, is_ref=True))
 
-                r['constructors'].append(c)
+                klass.constructors.append(c)
             elif m['destructor']:
-                r['destructor'] = m['name']['segments'][0]['name']
+                klass.destructor = m['name']['segments'][0]['name']
             else:
-                f = dict(
-                    name = m['name']['segments'][0]['name'],
-                    params = [],
-                    returns = None,
-                )
+                f = Method(name = m['name']['segments'][0]['name'], parent=klass)
+
                 if 'typename' in m['return_type']:
-                    f['returns'] = m['return_type']['typename']['segments'][0]['name']
+                    f.returns = m['return_type']['typename']['segments'][0]['name']
                 for p in m['parameters']:
                     name = p['name']
                     if 'typename' in p['type']:
                         typ = p['type']['typename']['segments'][0]['name']
-                        f['params'].append(dict(name=name, type=typ, is_ref=False))
+                        f.params.append(MethodParam(name=name, type=typ, is_ref=False))
                     elif 'ref_to' in p['type']:
                         typ = p['type']['ref_to']['typename']['segments'][0]['name']
-                        f['params'].append(dict(name=name, type=typ, is_ref=True))
+                        f.params.append(MethodParam(name=name, type=typ, is_ref=True))
 
-                r['methods'].append(f)
+                klass.methods.append(f)
 
-    return CppClass(r)
+    return klass
 
 
 def main():
+    includes = []
     classes = []
-    for f in STK_INCLUDE.iterdir():
-        name = f.stem         
+    skip = [
+        'Effect',
+        'FileLoop',
+        'FileRead',
+        'FileWrite',
+        'FileWvIn',
+        'FileWvOut',
+        'Filter',
+        'Fir',
+        'FM',
+        'Function',
+        'Generator',
+        'Iir',
+        'InetWvIn',
+        'InetWvOut',
+        'Instrmnt',
+        'Messager',
+        'MidiFileIn',
+        'Modal',
+        'ModalBar',
+        'Mutex',
+        'Phonemes',
+        'RtAudio',
+        'RtMidi',
+        'RtWvIn',
+        'RtWvOut',
+        'Sampler',
+        'Skini',
+        'SKINImsg',
+        'SkiniSpec',
+        'SKINItbl',
+        'Socket',
+        'Stk',
+        'TcpClient',
+        'TcpServer',
+        'Thread',
+        'UdpSocket',
+        'Vector3D',
+        'WvIn',
+        'WvOut',
+
+    ]
+    for f in sorted(STK_INCLUDE.iterdir()):
+        name = f.stem
+        if name in skip:
+            continue
         try:
             obj = parse_file(f)
             d = dataclasses.asdict(obj)
             klass = get_class(d)
+            if klass.nticks == 0:
+                # print(name)
+                continue
         except cxxheaderparser.errors.CxxParseError:
             print("ERROR: ", name)
             continue
@@ -199,13 +256,19 @@ def main():
             print("IndexError: ", name)
             continue
 
+        includes.append(f'#include "{f.name}"')
         classes.append(klass)
+
+    for include in includes:
+        print(include)
+
+    print()
 
     for c in classes:
         print(c)
 
-    # with open('parsed.yml', 'w') as f:
-    #     yml = yaml.dump(ds)
-    #     f.write(yml)
+    with open('parsed.yml', 'w') as f:
+        yml = yaml.dump(ds)
+        f.write(yml)
 
 main()
