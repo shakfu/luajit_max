@@ -744,7 +744,7 @@ void lstk_init_lua(t_lstk *x)
                 .addFunction("setGrainParameters", &stk::Granulate::setGrainParameters)
                 .addFunction("setRandomFactor", &stk::Granulate::setRandomFactor)
                 .addFunction("lastOut", &stk::Granulate::lastOut)
-                .addFunction("tick", 
+                .addFunction("tick",
                     luabridge::overload<unsigned int>(&stk::Granulate::tick),
                     luabridge::overload<stk::StkFrames&, unsigned int>(&stk::Granulate::tick))
             .endClass()

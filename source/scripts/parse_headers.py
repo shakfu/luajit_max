@@ -6,17 +6,15 @@ parses stk headers and generate wrapping code.
 TODO:
     - generate luafunc
     - generate coll param list for each header
-    - fix missing std::* types in methods and constructors
-    - handle overloading beyond just tick methods
 
 """
 
 import os
 from pathlib import Path
-import yaml
+# import yaml
 from pprint import pprint
 import dataclasses
-import json
+from collections import Counter
 
 import cxxheaderparser
 from cxxheaderparser.simple import parse_file
@@ -48,6 +46,7 @@ class Method:
         self.params = params or []
         self.returns = returns
         self.parent = parent
+        self.overloaded = False
 
     def get_type(self, p):
         suffix = "&" if p.is_ref else ""
@@ -58,7 +57,7 @@ class Method:
     def __str__(self):
         name = self.name
         klass = self.parent.name
-        if self.name == 'tick':
+        if self.overloaded:
             params = ', '.join(self.get_type(p) for p in self.params)
             return f'        luabridge::overload<{params}>(&stk::{klass}::{name}),'
         return f'    .addFunction("{name}", &stk::{klass}::{name})'
@@ -93,13 +92,32 @@ class CppClass:
         self.constructors = constructors or []
         self.methods = methods or []
 
+    def get_interface(self):
+        names = set(m.name for m in self.methods)
+        return sorted(list(names))
+
+    @property
+    def method_counter(self):
+        return Counter(m.name for m in self.methods)
+
     @property
     def nticks(self):
-        n = 0
+        return self.method_counter['ticks']
+
+    def add_overloaded_method(self, name, lst):
+        mcount = self.method_counter[name]
+        lst.append(f'    .addFunction("{name}", ')
+        methods = []
         for m in self.methods:
-            if m.name == "tick":
-                n += 1
-        return n
+            if m.name == name:
+                m.overloaded = True
+                methods.append(m)
+        for i, m in enumerate(methods):
+            if i < mcount-1:
+                lst.append(str(m))
+            else:
+                lst.append(str(m)[:-1] + ')') # last of sequence
+        return lst
 
     def __str__(self):
         name = self.name
@@ -107,47 +125,21 @@ class CppClass:
         end = '.endClass()'
         space = ' '*4
         res = [start]
+
         for c in self.constructors:
             res.append(str(c))
-        ticks = 0
-        nticks = self.nticks
-        for m in self.methods:
-            if m.name == "tick" and ticks == 0:
-                res.append('    .addFunction("tick", ')
-                res.append(str(m))
-                ticks += 1
-            elif m.name == "tick" and ticks > 0 and ticks < nticks-1:
-                res.append(str(m))
-                ticks += 1
-            elif m.name == "tick" and ticks > 0 and ticks == nticks-1:
-                res.append(str(m)[:-1] + ')') # last of sequence
-            else:
-                res.append(str(m))
-                
-        res.append(end)
 
+        cache = {}
+        for m in self.methods:
+            if self.method_counter[m.name] > 1 and m.name not in cache:
+                res = self.add_overloaded_method(m.name, res)
+                cache[m.name] = None
+            elif m.name not in cache:
+                res.append(str(m))
+
+        res.append(end)
         return "\n".join(res)
 
-
-
-
-
-
-# def parse(name=None):
-#     ps_list = []
-#     for f in STK_INCLUDE.iterdir():            
-#         try:
-#             if name:
-#                 if f.stem == name:
-#                     ps_list.append(parse_file(f))
-#             else:
-#                 ps_list.append(parse_file(f))
-#         except cxxheaderparser.errors.CxxParseError:
-#             print("ERROR: ", f)
-#             continue
-
-#     ds_list = [dataclasses.asdict(p) for p in ps_list]
-#     return ds_list
 
 def get_class(d):
     d = d['namespace']['namespaces']['stk']
@@ -162,10 +154,10 @@ def get_class(d):
                 for p in m['parameters']:
                     name = p['name']
                     if 'typename' in p['type']:
-                        typ = p['type']['typename']['segments'][0]['name']
+                        typ = "::".join(s['name'] for s in p['type']['typename']['segments'])
                         c.params.append(Param(name=name, type=typ, is_ref=False))
                     elif 'ref_to' in p['type']:
-                        typ = p['type']['ref_to']['segments'][0]['name']
+                        typ = "::".join(s['name'] for s in p['type']['ref_to']['segments'])
                         c.params.append(Param(name=name, type=typ, is_ref=True))
 
                 klass.constructors.append(c)
@@ -176,13 +168,14 @@ def get_class(d):
 
                 if 'typename' in m['return_type']:
                     f.returns = m['return_type']['typename']['segments'][0]['name']
+
                 for p in m['parameters']:
                     name = p['name']
                     if 'typename' in p['type']:
-                        typ = p['type']['typename']['segments'][0]['name']
+                        typ = "::".join(s['name'] for s in p['type']['typename']['segments'])
                         f.params.append(MethodParam(name=name, type=typ, is_ref=False))
                     elif 'ref_to' in p['type']:
-                        typ = p['type']['ref_to']['typename']['segments'][0]['name']
+                        typ = "::".join(s['name'] for s in p['type']['ref_to']['typename']['segments'])
                         f.params.append(MethodParam(name=name, type=typ, is_ref=True))
 
                 klass.methods.append(f)
@@ -242,12 +235,19 @@ def main():
         try:
             obj = parse_file(f)
             d = dataclasses.asdict(obj)
+
+            # if name=='Granulate':
+            #     with open('parsed.yml', 'w') as f:
+            #         yml = yaml.dump(d)
+            #         f.write(yml)
+
             klass = get_class(d)
-            if klass.nticks == 0:
+
+            # if klass.nticks == 0:
                 # print(name)
-                continue
+                # continue
         except cxxheaderparser.errors.CxxParseError:
-            print("ERROR: ", name)
+            print("cxxheaderparser.ERROR: ", name)
             continue
         except KeyError:
             print("KeyError: ", name)
@@ -257,18 +257,17 @@ def main():
             continue
 
         includes.append(f'#include "{f.name}"')
+
         classes.append(klass)
 
-    for include in includes:
-        print(include)
+    # for include in includes:
+    #     print(include)
 
-    print()
+    # print()
 
     for c in classes:
+        # print(c.name, c.get_interface())
         print(c)
-
-    with open('parsed.yml', 'w') as f:
-        yml = yaml.dump(ds)
-        f.write(yml)
+        print()
 
 main()
