@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 
 """
-parses stk headers and generate wrapping code.
-
-TODO:
-    - generate luafunc
-    - generate coll param list for each header
+parses stk headers and generates wrapping code.
 
 """
 
@@ -34,8 +30,15 @@ class Param:
         suffix = "&" if self.is_ref else ""
         return f"{self.type}{suffix} {self.name}"
 
-class MethodParam(Param):
-    def __str__(self):
+    def __repr__(self):
+        return f"<Param {self}>"
+
+    def render(self):
+        suffix = "&" if self.is_ref else ""
+        return f"{self.type}{suffix} {self.name}"
+
+class MParam(Param):
+    def render(self):
         suffix = "&" if self.is_ref else ""
         return f"{self.type}{suffix}"
 
@@ -48,13 +51,16 @@ class Method:
         self.parent = parent
         self.overloaded = False
 
+    def __repr__(self):
+        params = ", ".join(str(p) for p in self.params)
+        return f"<Method {self.returns} {self.name}({params}) >"
+
     def get_type(self, p):
         suffix = "&" if p.is_ref else ""
         prefix = "stk::" if p.type.startswith('Stk') else ""
         return f"{prefix}{p.type}{suffix}"
 
-
-    def __str__(self):
+    def render(self):
         name = self.name
         klass = self.parent.name
         if self.overloaded:
@@ -72,12 +78,19 @@ class Constructor(Method):
         self.params = params or []
         self.parent = parent
 
+    def __str__(self):
+        params = ", ".join(str(p) for p in self.params)
+        return f"{self.name}({params})"
+
+    def __repr__(self):
+        return f"<Constructor {self} >"
+
     def get_type(self, p):
         suffix = "&" if p.is_ref else ""
         prefix = "stk::" if p.type.startswith('Stk') else ""
         return f"{prefix}{p.type}{suffix} {p.name}"
 
-    def __str__(self):
+    def render(self):
         if self.params:
             params = ", ".join(self.get_type(p) for p in self.params)
             return f'    .addConstructor<void (*) ({params})>()'
@@ -92,9 +105,35 @@ class CppClass:
         self.constructors = constructors or []
         self.methods = methods or []
 
-    def get_interface(self):
-        names = set(m.name for m in self.methods)
+    def __repr__(self):
+        return f"<CppClass {self.name}>"
+
+    def get_mlist(self):
+        names = set(m.name for m in self.methods if not m.name == 'tick')
         return sorted(list(names))
+
+    def get_plist(self):
+        params = set()
+        for m in self.methods:
+            if m.name == 'tick':
+                continue
+            for p in m.params:
+                params.add(p.name)
+        return ", ".join(params)
+
+    def get_luafunc(self):
+        name = self.name.lower()
+        _name = "_" + name
+        res = []
+        add = res.append
+        c_info = ", ".join(str(c) for c in self.constructors)
+        add(f"local {_name} = stk.{self.name}() -- {c_info}")
+        add(f"{name} = function(x, fb, n, {self.get_plist()})")
+        for m in self.methods:
+            ps = ", ".join(str(p) for p in m.params)
+            add(f"    -- {_name}:{m.name}({ps})")
+        add("end")
+        return "\n".join(res)
 
     @property
     def method_counter(self):
@@ -114,12 +153,12 @@ class CppClass:
                 methods.append(m)
         for i, m in enumerate(methods):
             if i < mcount-1:
-                lst.append(str(m))
+                lst.append(m.render())
             else:
-                lst.append(str(m)[:-1] + ')') # last of sequence
+                lst.append(m.render()[:-1] + ')') # last of sequence
         return lst
 
-    def __str__(self):
+    def render(self):
         name = self.name
         start = f'.beginClass <stk::{name}> ("{name}")'
         end = '.endClass()'
@@ -127,7 +166,7 @@ class CppClass:
         res = [start]
 
         for c in self.constructors:
-            res.append(str(c))
+            res.append(c.render())
 
         cache = {}
         for m in self.methods:
@@ -135,7 +174,7 @@ class CppClass:
                 res = self.add_overloaded_method(m.name, res)
                 cache[m.name] = None
             elif m.name not in cache:
-                res.append(str(m))
+                res.append(m.render())
 
         res.append(end)
         return "\n".join(res)
@@ -173,10 +212,10 @@ def get_class(d):
                     name = p['name']
                     if 'typename' in p['type']:
                         typ = "::".join(s['name'] for s in p['type']['typename']['segments'])
-                        f.params.append(MethodParam(name=name, type=typ, is_ref=False))
+                        f.params.append(MParam(name=name, type=typ, is_ref=False))
                     elif 'ref_to' in p['type']:
                         typ = "::".join(s['name'] for s in p['type']['ref_to']['typename']['segments'])
-                        f.params.append(MethodParam(name=name, type=typ, is_ref=True))
+                        f.params.append(MParam(name=name, type=typ, is_ref=True))
 
                 klass.methods.append(f)
 
@@ -265,9 +304,12 @@ def main():
 
     # print()
 
+
     for c in classes:
+        # print(c.render())
         # print(c.name, c.get_interface())
-        print(c)
+        # from IPython import embed; embed()
+        print(c.get_luafunc())
         print()
 
 main()
