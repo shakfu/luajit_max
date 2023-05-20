@@ -306,10 +306,11 @@ def main():
 
 
     for c in classes:
-        # print(c.render())
+        if c.name == 'FM':
+            print(c.render())
         # print(c.name, c.get_interface())
         # from IPython import embed; embed()
-        print(c.get_luafunc())
-        print()
+        # print(c.get_luafunc())
+        # print()
 
 main()

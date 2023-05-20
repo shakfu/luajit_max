@@ -24,7 +24,11 @@ public:
         return this->name + " " + std::to_string(this->age);
     }
 
-    // void load( const char **filenames );
+    void load1( const char **filenames );
+
+    void load( std::vector<std::string> filenames ) {
+    }
+
 };
 
 } // end namespace app
@@ -64,7 +68,7 @@ int main() {
             .beginClass <app::Person> ("Person")
                 .addConstructor <void (*) (std::string name, int age)>()
                 .addFunction("identify", &app::Person::identify)
-                // .addFunction("load", &app::Person::load)
+                .addFunction("load", &app::Person::load)
             .endClass()
         .endNamespace();
 

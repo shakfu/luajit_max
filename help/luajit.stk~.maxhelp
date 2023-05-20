@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 317.0, 133.0, 684.0, 534.0 ],
+		"rect" : [ 312.0, 175.0, 646.0, 534.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 10.0,
@@ -364,7 +364,7 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-13",
-					"items" : [ "base", ",", "sine", ",", "delay" ],
+					"items" : [ "base", ",", "sine", ",", "delay", ",", "blitsquare", ",", "pitshift" ],
 					"maxclass" : "umenu",
 					"numinlets" : 1,
 					"numoutlets" : 3,
