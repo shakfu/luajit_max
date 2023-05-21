@@ -22,6 +22,10 @@ SAMPLE_RATE = 44100.0
 ----------------------------------------------------------------------------------
 -- utility functions
 
+function clamp(x, min, max)
+   return x < min and min or x > max and max or x
+end
+
 
 function dump(o)
    if type(o) == 'table' then
@@ -83,21 +87,27 @@ end
 -- problematic worp functions
 
 
--- pshift = Dsp:Pitchshift{f=1}
--- pitchshift = function(x, fb, n, p1)
---    pshift:set{f = p1}
---    return pshift()
--- end
-
--- _filter = Dsp:Filter { f = 100, Q = 3 }
--- filter = function(x, fb, n, p1)
---    _filter:set{f = p1}
---    return _filter()
--- end
-
 
 ----------------------------------------------------------------------------------
 -- working worp functions
+
+_reverb = Dsp:Reverb { wet = 0.5, dry = 0.5, room = 1.0, damp = 0.1 }
+reverb = function(x, fb, n, p1)
+   _reverb:set{wet = p1}
+   return _reverb(x)
+end
+
+_pitchshift = Dsp:Pitchshift{f=1}
+pitchshift = function(x, fb, n, p1)
+   _pitchshift:set{f = p1}
+   return _pitchshift(x)
+end
+
+_filter = Dsp:Filter { ft = "lp", f = 1500, Q = 4 }
+filter = function(x, fb, n, p1)
+   _filter:set{f = p1}
+   return _filter(x)
+end
 
 _square = Dsp:Square{f=220}
 square = function(x, fb, n, p1)
@@ -121,6 +131,8 @@ end
 -- base (only attenuate) function
 
 base = function(x, fb, n, p1)
-   return x/4
+   local c = p1 / 4
+   return x * c
 end
+
 

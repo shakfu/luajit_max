@@ -4,18 +4,18 @@ Includes two externals which both embed luajit in a Max/Msp external:
 
 1. **luajit~**
 
-A basic demo of embedding the luajit engine in a max/msp external.
+A basic demo of embedding the luajit engine in a max/msp external's audio thread.
 
-A number of basic dsp functions are implemented in `examples/dsp.lua` and they can be selected by name from the dropdown in `help/luajit~.maxhelp`.
+A number of basic dsp functions are implemented in `examples/dsp.lua` including a number from [worp](https://github.com/zevv/worp) and can be selected by name from the dropdown in `help/luajit~.maxhelp`. 
 
-It is also possible to add or modify functions to `dsp.lua` and then send a `bang` message to reload it, provided the name of the function is either selected in the dropdown menu or is sent as a message to the `luajit~` object.
+It possible to add or modify functions to `dsp.lua` and then send a `bang` message to reload it while the audio stream is active.
 
 
 2. **luajit.stk~**
 
-Same as (1) but with the addition of objects from the [Synthesis ToolKit (stk)](https://github.com/thestk/stk) library which are wrapped auotmatically using [LuaBridge3](https://github.com/kunitoki/LuaBridge3) and a custom python script.
+Same as (1) but with the addition of c++ objects from the [Synthesis ToolKit (stk)](https://github.com/thestk/stk) library which are wrapped automatically using [LuaBridge3](https://github.com/kunitoki/LuaBridge3) and a custom python script.
 
-In this the relevant lua file is called `dsp_stk.lua`. There is also another generated file, `dsp_funcs.lua`, which includes all of the stk wrapper lua functions with documentation.
+In this case, the relevant lua file is called `dsp_stk.lua`. There is also another generated file, `dsp_stk_api.lua`, which includes reference and documentation for all of the wrapped stk lua functions.
 
 
 ## Installation
