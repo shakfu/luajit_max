@@ -41,7 +41,7 @@
 		"boxes" : [ 			{
 				"box" : 				{
 					"id" : "obj-13",
-					"items" : [ "base", ",", "sine", ",", "lpf1", ",", "lpf2", ",", "lpf3", ",", "saturate" ],
+					"items" : [ "base", ",", "osc", ",", "saw", ",", "square", ",", "lpf1", ",", "lpf2", ",", "lpf3", ",", "saturate" ],
 					"maxclass" : "umenu",
 					"numinlets" : 1,
 					"numoutlets" : 3,

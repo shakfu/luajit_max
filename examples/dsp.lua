@@ -1,7 +1,6 @@
--- dsp.lua
-
-
+----------------------------------------------------------------------------------
 -- get path of containing folder and set it as package.path
+
 function script_path()
    local str = debug.getinfo(2, "S").source:sub(2)
    return str:match("(.*/)")
@@ -12,9 +11,16 @@ pkg_path = ";" .. script_path() .. "?.lua"
 package.path = package.path .. pkg_path
 
 
+----------------------------------------------------------------------------------
+-- dsp.lua
+
 require 'dsp_worp'
 
 SAMPLE_RATE = 44100.0
+
+
+----------------------------------------------------------------------------------
+-- utility functions
 
 
 function dump(o)
@@ -29,6 +35,10 @@ function dump(o)
       return tostring(o)
    end
 end
+
+
+----------------------------------------------------------------------------------
+-- working custom functions
 
 
 -- -- low-pass single-pole filter
@@ -69,6 +79,9 @@ saturate = function(x, feedback, n, a)
    end
 end
    
+----------------------------------------------------------------------------------
+-- problematic worp functions
+
 
 -- pshift = Dsp:Pitchshift{f=1}
 -- pitchshift = function(x, fb, n, p1)
@@ -76,15 +89,38 @@ end
 --    return pshift()
 -- end
 
+-- _filter = Dsp:Filter { f = 100, Q = 3 }
+-- filter = function(x, fb, n, p1)
+--    _filter:set{f = p1}
+--    return _filter()
+-- end
 
-osc = Dsp:Osc{f=220}
-sine = function(x, fb, n, p1)
-   osc:set{f = p1}
-   return osc()
+
+----------------------------------------------------------------------------------
+-- working worp functions
+
+_square = Dsp:Square{f=220}
+square = function(x, fb, n, p1)
+   _square:set{f = p1}
+   return _square()
 end
 
+_saw = Dsp:Saw{f=220}
+saw = function(x, fb, n, p1)
+   _saw:set{f = p1}
+   return _saw()
+end
+
+_osc = Dsp:Osc{f=220}
+osc = function(x, fb, n, p1)
+   _osc:set{f = p1}
+   return _osc()
+end
+
+----------------------------------------------------------------------------------
+-- base (only attenuate) function
 
 base = function(x, fb, n, p1)
-   return x/2
+   return x/4
 end
 
