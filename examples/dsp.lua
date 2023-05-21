@@ -1,5 +1,19 @@
 -- dsp.lua
 
+
+-- get path of containing folder and set it as package.path
+function script_path()
+   local str = debug.getinfo(2, "S").source:sub(2)
+   return str:match("(.*/)")
+end
+
+pkg_path = ";" .. script_path() .. "?.lua"
+
+package.path = package.path .. pkg_path
+
+
+require 'dsp_worp'
+
 SAMPLE_RATE = 44100.0
 
 
@@ -56,8 +70,21 @@ saturate = function(x, feedback, n, a)
 end
    
 
+-- pshift = Dsp:Pitchshift{f=1}
+-- pitchshift = function(x, fb, n, p1)
+--    pshift:set{f = p1}
+--    return pshift()
+-- end
 
-base = function(x, n, p1)
-    return x / 2
+
+osc = Dsp:Osc{f=220}
+sine = function(x, fb, n, p1)
+   osc:set{f = p1}
+   return osc()
+end
+
+
+base = function(x, fb, n, p1)
+   return x/2
 end
 
