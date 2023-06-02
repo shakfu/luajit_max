@@ -24,11 +24,14 @@ public:
         return this->name + " " + std::to_string(this->age);
     }
 
-    void load1( const char **filenames );
+    // void load(std::vector<std::string> filenames) {
+    //     for (int i = 0; i < filenames.size(); ++i)
+    //         std::cout << filenames[i] << std::endl;        
+    // }
 
-    void load( std::vector<std::string> filenames ) {
+    void load( const char **filenames ) {
+        std::cout << filenames[0] << std::endl;
     }
-
 };
 
 } // end namespace app
@@ -68,7 +71,14 @@ int main() {
             .beginClass <app::Person> ("Person")
                 .addConstructor <void (*) (std::string name, int age)>()
                 .addFunction("identify", &app::Person::identify)
-                .addFunction("load", &app::Person::load)
+                .addFunction("load", [](app::Person& self, std::vector<std::string> filenames)
+                {
+                    std::vector<const char*> strings;
+                    for (int i = 0; i < filenames.size(); ++i)
+                        strings.push_back(filenames[i].c_str());
+                    self.load(strings.data());
+                })
+                // .addFunction("load", &app::Person::load)
             .endClass()
         .endNamespace();
 
@@ -94,3 +104,7 @@ int main() {
 
     return 0;
 }
+
+
+
+

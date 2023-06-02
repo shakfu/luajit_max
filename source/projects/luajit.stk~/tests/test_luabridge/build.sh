@@ -1,8 +1,8 @@
 
-DEPS=../../../../build/deps
+DEPS=../../../../../build/deps
 LUAJIT=${DEPS}/luajit-install
 STK=${DEPS}/stk-install
-LUABRIDGE=../includes/LuaBridge
+LUABRIDGE=../../includes/LuaBridge
 
 
 g++ --std=c++17 \

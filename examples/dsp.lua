@@ -1,3 +1,4 @@
+-- dsp.lua
 ----------------------------------------------------------------------------------
 -- get path of containing folder and set it as package.path
 
@@ -10,11 +11,11 @@ pkg_path = ";" .. script_path() .. "?.lua"
 
 package.path = package.path .. pkg_path
 
-
 ----------------------------------------------------------------------------------
--- dsp.lua
+-- imports
 
 require 'dsp_worp'
+require 'fun'
 
 SAMPLE_RATE = 44100.0
 
@@ -24,6 +25,10 @@ SAMPLE_RATE = 44100.0
 
 function clamp(x, min, max)
    return x < min and min or x > max and max or x
+end
+
+function scale(x, in_min, in_max, out_min, out_max)
+   return ((out_max - out_min)/(in_max - in_min)) * (x - in_min) + out_min
 end
 
 
@@ -40,17 +45,16 @@ function dump(o)
    end
 end
 
-
 ----------------------------------------------------------------------------------
 -- working custom functions
 
 
--- -- low-pass single-pole filter
--- -- y(n) = y(n-1) + b(x(n) - y(n-1))
--- -- where 
--- --  b = 1 - d
--- --  d: Decay between samples (in (0, 1)).
--- -- see: https://tomroelandts.com/articles/low-pass-single-pole-iir-filter
+-- low-pass single-pole filter
+-- y(n) = y(n-1) + b(x(n) - y(n-1))
+-- where 
+--  b = 1 - d
+--  d: Decay between samples (in (0, 1)).
+-- see: https://tomroelandts.com/articles/low-pass-single-pole-iir-filter
 lpf1 = function(x, x0, n, decay)
     local b = 1 - decay
     x0 = x0 + b * (x - x0)

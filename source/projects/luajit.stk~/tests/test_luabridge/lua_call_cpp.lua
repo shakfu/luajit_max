@@ -11,6 +11,7 @@ end
 
 local p = app.Person("sam", 21)
 local s = p:identify()
+p:load({"abc.txt"})
 assert(s == "sam 21")
 print(s)
 
