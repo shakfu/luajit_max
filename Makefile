@@ -9,7 +9,7 @@ all: cmake
 
 
 cmake: $(LUAJIT) $(STK)
-	@mkdir -p build && cd build && cmake .. && make
+	@mkdir -p build && cd build && cmake .. -GXcode && cmake --build .
 
 $(LUAJIT):
 	@bash $(SCRIPTS)/build_dependencies.sh
